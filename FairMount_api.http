@@ -1,0 +1,6 @@
+@FairMount_api_HostAddress = http://localhost:5224
+
+GET {{FairMount_api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
