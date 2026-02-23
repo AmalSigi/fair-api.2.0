@@ -1,7 +1,15 @@
 using FairMount_api.Data;
 using FairMount_api.Interfaces;
 using FairMount_api.Models.Dtos;
+using FairMount_api.Models.Tables;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.SymbolStore;
+using System.Reflection.Metadata.Ecma335;
+using MySql.Data.MySqlClient;
+using System.Data;
+using Dapper;
 
 namespace FairMount_api.Repository
 {
@@ -42,40 +50,50 @@ namespace FairMount_api.Repository
             await _context.SaveChangesAsync();
             return order;
         }
+        //public async Task<List<PoDto>> GetActivePOS()
+        //{
+        //    return await _context.PurchaseOrders
+        //        .AsNoTracking()
+        //        .Where(po => po.Active == 1)
+        //        .OrderByDescending(po => po.CreatedAt)
+        //        .Select(po => new PoDto
+        //        {
+        //            Id = po.Id,
+        //            PoNumber = po.PoNumber,
+        //            Supplier = po.Supplier,
+        //            Destination = po.Destination,
+        //            PaymentTerms = po.PaymentTerms,
+        //            DeliveryTerms = po.DeliveryTerms,
+        //            ShippingCharges = po.ShippingCharges,
+        //            Discount = po.Discount,
+        //            OrderDate = po.OrderDate,
+        //            ModeOfShipment = po.ModeOfShipment,
+        //            DeliverySchedule = po.DeliverySchedule,
+        //            TotalAmount = po.TotalAmount,
+        //            TotalCost = po.TotalCost,
+        //            CreatedBy = po.CreatedBy,
+        //            CreatedAt = po.CreatedAt,
+
+        //            CustomerOrgName = po.Customer.CustomerName,
+        //            BuyerOrgName = po.BuyerOrg.Name,
+        //            VendorOrgName = po.VendorOrg.Name,
+        //            PoStatus = po.PoStatus.StatusName,
+        //            PoType = po.PoType.TypeName,
+        //            PoStatusId = po.StatusId
+        //        })
+        //        .ToListAsync();
+        //}
+
+
         public async Task<List<PoDto>> GetActivePOS()
         {
-            return await _context.PurchaseOrders
-                .AsNoTracking()
-                .Where(po => po.Active == 1)
-                .OrderByDescending(po => po.CreatedAt)
-                .Select(po => new PoDto
-                {
-                    Id = po.Id,
-                    PoNumber = po.PoNumber,
-                    Supplier = po.Supplier,
-                    Destination = po.Destination,
-                    PaymentTerms = po.PaymentTerms,
-                    DeliveryTerms = po.DeliveryTerms,
-                    ShippingCharges = po.ShippingCharges,
-                    Discount = po.Discount,
-                    OrderDate = po.OrderDate,
-                    ModeOfShipment = po.ModeOfShipment,
-                    DeliverySchedule = po.DeliverySchedule,
-                    TotalAmount = po.TotalAmount,
-                    TotalCost = po.TotalCost,
-                    CreatedBy = po.CreatedBy,
-                    CreatedAt = po.CreatedAt,
-
-                    CustomerOrgName = po.Customer.CustomerName,
-                    BuyerOrgName = po.BuyerOrg.Name,
-                    VendorOrgName = po.VendorOrg.Name,
-                    PoStatus = po.PoStatus.StatusName,
-                    PoType = po.PoType.TypeName,
-                    PoStatusId = po.StatusId
-                })
-                .ToListAsync();
+            var connection = _context.Database.GetDbConnection();
+            var result = await connection.QueryAsync<PoDto>(
+                "GetActivePurchaseOrders",
+                commandType: CommandType.StoredProcedure
+            );
+            return result.ToList();
         }
-
         //po items
         public async Task<List<POItem>> GetPOItems(int poId)
         {
@@ -140,6 +158,8 @@ namespace FairMount_api.Repository
                         var newItem = new POItem
                         {
                             Quantity = item.Quantity,
+                            LineNumber = item.LineNumber,
+                            PoNumber = item.PoNumber,
                             Unit = item.Unit,
                             UnitPrice = item.UnitPrice,
                             Description = item.Description,
@@ -153,6 +173,7 @@ namespace FairMount_api.Repository
                             HSC = item.HSC,
                             CountryOfOrigin = item.CountryOfOrigin,
                             WeightDim = item.WeightDim,
+                            Discount = item.Discount
                         };
                         newPOItems.Add(newItem);
 
@@ -162,6 +183,8 @@ namespace FairMount_api.Repository
                         var newItem = new POItem
                         {
                             Quantity = item.Quantity,
+                            LineNumber = item.LineNumber,
+                            PoNumber = item.PoNumber,
                             Unit = item.Unit,
                             UnitPrice = item.UnitPrice,
                             Description = item.Description,
@@ -175,6 +198,7 @@ namespace FairMount_api.Repository
                             HSC = item.HSC,
                             CountryOfOrigin = item.CountryOfOrigin,
                             WeightDim = item.WeightDim,
+                            Discount = item.Discount
                         };
                         _context.POItems.Add(newItem);
 
@@ -246,20 +270,17 @@ namespace FairMount_api.Repository
                     //create PO
                     var newPO = new PurchaseOrders
                     {
+
                         PoNumber = po.PoNumber,
                         CustomerId = customer != null ? customer.OrganizationId : 1,
                         BuyerOrgId = customer != null ? customer.OrganizationId : 1,
-                        Supplier = po.Supplier,
+                        OrderDate = po.OrderDate,
+                        DeliverySchedule = po.DeliverySchedule,
                         Destination = po.Destination,
                         PaymentTerms = po.PaymentTerms,
-                        DeliveryTerms = po.DeliveryTerms,
                         ShippingCharges = po.ShippingCharges,
-                        Discount = po.Discount,
-                        OrderDate = po.OrderDate,
+                        DeliveryTerms = po.DeliveryTerms,
                         ModeOfShipment = po.ModeOfShipment,
-                        DeliverySchedule = po.DeliverySchedule,
-                        TotalAmount = po.TotalAmount,
-                        TotalCost = po.TotalCost,
                         StatusId = 1,
                         PoTypeId = 1,
                         CreatedBy = 1,
@@ -270,20 +291,21 @@ namespace FairMount_api.Repository
                     //create PO items
                     var newItem = po.Items.Select(item => new POItem
                     {
-                        Quantity = item.Quantity,
+                        LineNumber = item.LineNumber,
                         Unit = item.Unit,
-                        Description = item.Description,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.UnitPrice,
+                        ActualCostPerUnit = item.ActualCostPerUnit,
+                        Discount = item.Discount,
                         ManufacturerModel = item.ManufacturerModel,
                         PartNumber = item.PartNumber,
-                        TraceabilityRequired = item.TraceabilityRequired,
-                        UnitPrice = item.UnitPrice,
-                        TotalPrice = item.TotalPrice,
-                        ActualCostPerUnit = item.ActualCostPerUnit,
-                        PoId = newPO.Id,
-                        HSC = item.HSC,
+                        Description = item.Description,
                         CountryOfOrigin = item.CountryOfOrigin,
+                        TraceabilityRequired = item.TraceabilityRequired,
+                        HSC = item.HSC,
                         WeightDim = item.WeightDim,
-                        LineNumber = item.LineNumber,
+
+                        PoId = newPO.Id,
                         PoNumber = item.PoNumber,
                     }).ToList();
                     _context.POItems.AddRange(newItem);
@@ -365,6 +387,37 @@ namespace FairMount_api.Repository
             catch (Exception ex)
             {
                 return false;
+            }
+        }
+
+        public async Task<PurchaseOrders> PoUpdate(int poId, PurchaseOrders po)
+        {
+            try
+            {
+                var existingPO = await _context.PurchaseOrders.FirstOrDefaultAsync(p => p.Id == poId);
+                if (existingPO == null)
+                {
+                    return null;
+                }
+                existingPO.PoNumber = po.PoNumber;
+                existingPO.PoTypeId = po.PoTypeId ?? existingPO.PoTypeId;
+                existingPO.Destination = po.Destination ?? existingPO.Destination;
+                existingPO.PaymentTerms = po.PaymentTerms ?? existingPO.PaymentTerms;
+                existingPO.DeliveryTerms = po.DeliveryTerms ?? existingPO.DeliveryTerms;
+                existingPO.ShippingCharges = po.ShippingCharges ?? existingPO.ShippingCharges;
+                if (po.OrderDate != default(DateTime))
+                {
+                    existingPO.OrderDate = po.OrderDate;
+                }
+                existingPO.ModeOfShipment = po.ModeOfShipment ?? existingPO.ModeOfShipment;
+                existingPO.DeliverySchedule = po.DeliverySchedule ?? existingPO.DeliverySchedule;
+                _context.PurchaseOrders.Update(existingPO);
+                await _context.SaveChangesAsync();
+                return existingPO;
+            }
+            catch (Exception ex)
+            {
+                return null;
             }
         }
     }

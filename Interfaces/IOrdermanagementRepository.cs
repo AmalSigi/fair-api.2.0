@@ -13,5 +13,6 @@ namespace FairMount_api.Interfaces
     Task<int> BulkAddPOItems(List<POItem> items,int poId,int? typeId,string? typeName);
     Task<List<ImportPOResponseDto>> BulkImportPOS (List<ImportPurchaseOrderDto> pos);
         Task<bool> PoStatusUpdate(int statusId,int poId);
-  }
+        Task<PurchaseOrders> PoUpdate(int poId, PurchaseOrders po);
+    }
 }
