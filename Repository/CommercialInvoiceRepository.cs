@@ -167,10 +167,10 @@ namespace FairMount_api.Repository
         {
             const int REQUIRED_PO_TYPE = 1;
             const int REQUIRED_STATUS_ID = 4;
-
+            const int REQUIRED_STATUS_IDS = 12;
             return await _context.PurchaseOrders
                 .AsNoTracking() // Crucial for read-only "Get" calls
-                .Where(po => po.PoTypeId == REQUIRED_PO_TYPE && (po.StatusId == REQUIRED_STATUS_ID || po.StatusId == 12))
+                .Where(po => po.PoTypeId == REQUIRED_PO_TYPE && po.StatusId == REQUIRED_STATUS_ID || po.StatusId == REQUIRED_STATUS_IDS)
                 .Select(po => new
                 {
                     po.Id, // Shorthand assignment
