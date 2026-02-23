@@ -185,6 +185,25 @@ namespace FairMount_api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
             }
         }
+
+
+        [HttpPost("UpdatePo")]
+        public async Task<IActionResult> POUpdate(int poId, [FromBody] PurchaseOrders po)
+        {
+            try
+            {
+                var updated = await _orderManagementRepository.PoUpdate(poId, po);
+                if (updated == null) return NotFound();
+                return NoContent();
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+
+        }
+
     }
     
 }
