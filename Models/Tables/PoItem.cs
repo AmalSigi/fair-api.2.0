@@ -39,7 +39,8 @@ public class POItem
   public string? PoNumber { get; set; }
   public int? InvoicedQty { get; set; }
   public decimal? Discount { get; set; }
-
+    public int TakenQuantity { get; set; }
+    public int RemainingQuantity { get; set; }
     [ForeignKey("StatusId")]
   public virtual POitemStatus? ItemStatus { get; set; }
 

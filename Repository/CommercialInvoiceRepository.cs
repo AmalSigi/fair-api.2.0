@@ -1,8 +1,11 @@
-﻿using FairMount_api.Application.Interfaces;
+﻿using Dapper;
+using FairMount_api.Application.Interfaces;
 using FairMount_api.Data;
+using FairMount_api.Models.Dtos;
 using FairMount_api.Models.Tables;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -31,28 +34,19 @@ namespace FairMount_api.Repository
                 .Include(ci => ci.CommercialInvoiceItems)
                 .Include(ci => ci.PackingList)
                     .ThenInclude(pl => pl.PackingListItems)
-                .Include(ci => ci.Sli_Document)
+                .Include(ci => ci.Sli_Document).ThenInclude(pl => pl.Items)
                 .FirstOrDefaultAsync(ci => ci.CommercialInvoiceId == invoiceId);
         }
 
         public async Task<List<CommercialInvoice>> GetAllInvoicesAsync(DateOnly? startDate, DateOnly? endDate)
         {
-            IQueryable<CommercialInvoice> query = _context.CommercialInvoices.AsNoTracking();
+            var invoices = await _context.CommercialInvoices
+                .FromSqlRaw("CALL GetAllInvoices({0}, {1})", startDate, endDate)
+                .AsNoTracking()
+                .ToListAsync();
 
-            if (startDate.HasValue)
-            {
-                var startDateTime = startDate.Value.ToDateTime(TimeOnly.MinValue);
-                query = query.Where(pi => pi.CreatedAt >= startDateTime);
-            }
-
-            if (endDate.HasValue)
-            {
-                var endDateTime = endDate.Value.ToDateTime(TimeOnly.MaxValue);
-                query = query.Where(pi => pi.CreatedAt <= endDateTime);
-            }
-
-            // Use ToListAsync() to ensure the call is actually non-blocking
-            return await query.OrderByDescending(ci => ci.CreatedAt).ToListAsync();
+            return invoices;
+       
         }
         // --- Create Invoice  ---
 
@@ -89,7 +83,6 @@ namespace FairMount_api.Repository
                 }
 
                 var rows = await _context.SaveChangesAsync();
-                Console.WriteLine($"Rows affected: {rows}");
 
                 // 3. Get affected PO IDs
                 var poIds = invoice.CommercialInvoiceItems
@@ -165,21 +158,27 @@ namespace FairMount_api.Repository
         // --- Get Eligible POs ---
         public async Task<IEnumerable<object>> GetEligiblePurchaseOrdersAsync()
         {
-            const int REQUIRED_PO_TYPE = 1;
-            const int REQUIRED_STATUS_ID = 4;
-            const int REQUIRED_STATUS_IDS = 12;
-            return await _context.PurchaseOrders
-                .AsNoTracking() // Crucial for read-only "Get" calls
-                .Where(po => po.PoTypeId == REQUIRED_PO_TYPE && po.StatusId == REQUIRED_STATUS_ID || po.StatusId == REQUIRED_STATUS_IDS)
-                .Select(po => new
-                {
-                    po.Id, // Shorthand assignment
-                    po.PoNumber,
-                    po.BuyerOrgId,
-                    po.OrderDate,
-                    CurrentStatus = po.StatusId.ToString()
-                })
-                .ToListAsync(); // Changed from ToListAsync casting to direct call
+            var connection = _context.Database.GetDbConnection();
+            var result = await connection.QueryAsync<ElgiblePO>(
+                "GetEligiblePurchaseOrders",
+                commandType: CommandType.StoredProcedure
+            );
+            return result.ToList();
+            //const int REQUIRED_PO_TYPE = 1;
+            //const int REQUIRED_STATUS_ID = 4;
+            //const int REQUIRED_STATUS_IDS = 12;
+            //return await _context.PurchaseOrders
+            //    .AsNoTracking()
+            //    .Where(po => po.PoTypeId == REQUIRED_PO_TYPE && po.StatusId == REQUIRED_STATUS_ID || po.StatusId == REQUIRED_STATUS_IDS)
+            //    .Select(po => new
+            //    {
+            //        po.Id, 
+            //        po.PoNumber,
+            //        po.BuyerOrgId,
+            //        po.OrderDate,
+            //        CurrentStatus = po.StatusId.ToString()
+            //    })
+            //    .ToListAsync(); 
         }
 
         public async Task<bool> DeleteComericalInvoiceAsync(int id, int poId)
