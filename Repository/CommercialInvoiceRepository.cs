@@ -220,5 +220,19 @@ namespace FairMount_api.Repository
                 return false;
             }
         }
+
+        public async Task<List<InvoiceTax>> GetInvoicesTaxAsync(DateTime? startDate, DateTime? endDate)
+        {
+            var connection = _context.Database.GetDbConnection();
+
+            var result = await connection.QueryAsync<InvoiceTax>(
+                "GetInvoiceTax",
+                new { startDate, endDate },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result.ToList();
+        }
+
     }
 }
