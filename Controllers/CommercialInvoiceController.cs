@@ -94,6 +94,15 @@ namespace FairMount_api.Api.Controllers
             return NoContent();
         }
 
+        // GET: api/commercialinvoice
+        [HttpGet("invoiceTax")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetTInvoicesTax(DateTime? startDate, DateTime? endDate)
+        {
+            var invoices = await _repo.GetInvoicesTaxAsync(startDate, endDate);
+            return Ok(invoices);
+        }
+
         //[HttpPost]
         //public async Task<IActionResult> DeleteComericalInvoiceAsync(int id, int poId) {
         //    var delete = await _repo.DeleteComericalInvoiceAsync(id, poId);

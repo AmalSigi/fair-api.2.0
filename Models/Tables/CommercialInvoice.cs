@@ -84,6 +84,14 @@ namespace FairMount_api.Models.Tables
         [Column("Note")]
         public string? Note{ get; set; }
 
+        [Column("NetCost")]
+        public decimal NetCost { get; set; }
+
+        [Column("ShippingCharge")]
+        public decimal ShippingCharge { get; set; }
+
+        [Column("TaxAmount")]
+        public decimal TaxAmount { get; set; }
 
         // 🔗 Navigation Properties 
         // NOTE: These entities ( Organizations, OrganizationAddresses) 

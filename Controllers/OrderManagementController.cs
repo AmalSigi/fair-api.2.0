@@ -204,6 +204,26 @@ namespace FairMount_api.Controllers
 
         }
 
+        [HttpGet("GetPODetails/{poId}")]
+        public async Task<IActionResult> GetPODetails(int poId)
+        {
+            try
+            {
+                var poDetails = await _orderManagementRepository.GetPODetails(poId);
+                if (poDetails == null || !poDetails.Any())
+                {
+                    return NotFound($"No items found for purchase order ID {poId}.");
+                }
+                return Ok(poDetails);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
     }
+
+
     
 }

@@ -97,10 +97,18 @@ namespace FairMount_api.Repository
         //po items
         public async Task<List<POItem>> GetPOItems(int poId)
         {
-            return await _context.POItems
-                .AsNoTracking()
-                .Where(item => item.PoId == poId)
-                .ToListAsync();
+            using var connection = _context.Database.GetDbConnection();
+
+            if (connection.State == ConnectionState.Closed)
+                await connection.OpenAsync();
+
+            var result = await connection.QueryAsync<POItem>(
+                "GetPOItems",
+                new { poId },
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result.ToList();
         }
         public Task<int> AddPOItem(POItem item)
         {
@@ -144,14 +152,15 @@ namespace FairMount_api.Repository
                     if (exisistingItem != null)
                     {
 
-                        if (exisistingItem.Quantity > 0)
+                        if (exisistingItem.RemainingQuantity > 0)
                         {
                             affectedPos.Add(exisistingItem.PoId);
-                            exisistingItem.Quantity -= item.Quantity;
-                            exisistingItem.StatusId = 2;
+                            exisistingItem.RemainingQuantity -= item.Quantity;
+                            exisistingItem.TakenQuantity += item.Quantity;
+                            exisistingItem.StatusId = 4;
                             _context.POItems.Update(exisistingItem);
                         }
-                        if (exisistingItem.Quantity == 0) { exisistingItem.StatusId = 3; }
+                        if (exisistingItem.RemainingQuantity == 0) { exisistingItem.StatusId = 4; }
 
                         _context.POItems.Update(exisistingItem);
 
@@ -173,7 +182,8 @@ namespace FairMount_api.Repository
                             HSC = item.HSC,
                             CountryOfOrigin = item.CountryOfOrigin,
                             WeightDim = item.WeightDim,
-                            Discount = item.Discount
+                            Discount = item.Discount,
+                            RemainingQuantity = item.Quantity,
                         };
                         newPOItems.Add(newItem);
 
@@ -198,7 +208,8 @@ namespace FairMount_api.Repository
                             HSC = item.HSC,
                             CountryOfOrigin = item.CountryOfOrigin,
                             WeightDim = item.WeightDim,
-                            Discount = item.Discount
+                            Discount = item.Discount,
+                            RemainingQuantity = item.Quantity
                         };
                         _context.POItems.Add(newItem);
 
@@ -304,9 +315,9 @@ namespace FairMount_api.Repository
                         TraceabilityRequired = item.TraceabilityRequired,
                         HSC = item.HSC,
                         WeightDim = item.WeightDim,
-
                         PoId = newPO.Id,
                         PoNumber = item.PoNumber,
+                        RemainingQuantity = item.Quantity,
                     }).ToList();
                     _context.POItems.AddRange(newItem);
 
@@ -419,6 +430,17 @@ namespace FairMount_api.Repository
             {
                 return null;
             }
+        }
+
+        public async Task<List<PODetails>> GetPODetails(int poId)
+        {
+            var connection = _context.Database.GetDbConnection();
+            var result = await connection.QueryAsync<PODetails>(
+                "GetPODetails",
+                new { poId },
+                commandType: CommandType.StoredProcedure
+            );
+            return result.ToList();
         }
     }
 
