@@ -104,7 +104,7 @@ namespace FairMount_api.Repository
 
             var result = await connection.QueryAsync<POItem>(
                 "GetPOItems",
-                new { poId },  
+                new { poId },
                 commandType: CommandType.StoredProcedure
             );
 
@@ -430,6 +430,17 @@ namespace FairMount_api.Repository
             {
                 return null;
             }
+        }
+
+        public async Task<List<PODetails>> GetPODetails(int poId)
+        {
+            var connection = _context.Database.GetDbConnection();
+            var result = await connection.QueryAsync<PODetails>(
+                "GetPODetails",
+                new { poId },
+                commandType: CommandType.StoredProcedure
+            );
+            return result.ToList();
         }
     }
 

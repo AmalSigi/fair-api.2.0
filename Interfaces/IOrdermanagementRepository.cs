@@ -14,5 +14,6 @@ namespace FairMount_api.Interfaces
     Task<List<ImportPOResponseDto>> BulkImportPOS (List<ImportPurchaseOrderDto> pos);
         Task<bool> PoStatusUpdate(int statusId,int poId);
         Task<PurchaseOrders> PoUpdate(int poId, PurchaseOrders po);
+        Task<List<PODetails>> GetPODetails(int poId);
     }
 }
