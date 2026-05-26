@@ -12,7 +12,7 @@ namespace FairMount_api.Models.Dtos
     public string PoNumber { get; set; }
     public int CustomerId { get; set; }
     public string? Supplier { get; set; }
-    public string? Destination { get; set; }
+    public string? Country { get; set; }
     public string? PaymentTerms { get; set; }
     public string? DeliveryTerms { get; set; }
     public decimal? ShippingCharges { get; set; }

@@ -17,6 +17,7 @@ namespace FairMount_api.Models.Dtos
         public decimal? ShippingCharges { get; set; }
         public string? DeliveryTerms { get; set; }
         public string? ModeOfShipment { get; set; }
+        public string? Country { get; set; }
 
         [Required]
         public List<ImportPOItemDto> Items { get; set; } = new();

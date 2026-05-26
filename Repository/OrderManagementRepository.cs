@@ -292,6 +292,7 @@ namespace FairMount_api.Repository
                         ShippingCharges = po.ShippingCharges,
                         DeliveryTerms = po.DeliveryTerms,
                         ModeOfShipment = po.ModeOfShipment,
+                        Country = po.Country,
                         StatusId = 1,
                         PoTypeId = 1,
                         CreatedBy = 1,
@@ -422,6 +423,7 @@ namespace FairMount_api.Repository
                 }
                 existingPO.ModeOfShipment = po.ModeOfShipment ?? existingPO.ModeOfShipment;
                 existingPO.DeliverySchedule = po.DeliverySchedule ?? existingPO.DeliverySchedule;
+                existingPO.Country = po.Country ?? existingPO.Country;
                 _context.PurchaseOrders.Update(existingPO);
                 await _context.SaveChangesAsync();
                 return existingPO;

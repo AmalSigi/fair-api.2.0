@@ -43,8 +43,9 @@ public class PurchaseOrders
   public int? Active { get; set; }
   public int? StatusId { get; set; }
   public int? PoTypeId { get; set; }
-  // Navigation Properties
-  [ForeignKey("CustomerId")]
+    public string? Country { get; set; }
+    // Navigation Properties
+    [ForeignKey("CustomerId")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     [ValidateNever]
     public Customer Customer { get; set; }
