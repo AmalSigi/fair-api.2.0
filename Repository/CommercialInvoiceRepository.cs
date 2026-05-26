@@ -40,10 +40,25 @@ namespace FairMount_api.Repository
 
         public async Task<List<CommercialInvoice>> GetAllInvoicesAsync(DateOnly? startDate, DateOnly? endDate)
         {
-            var invoices = await _context.CommercialInvoices
-                .FromSqlRaw("CALL GetAllInvoices({0}, {1})", startDate, endDate)
-                .AsNoTracking()
-                .ToListAsync();
+            var invoices = new List<CommercialInvoice>();
+
+            if (startDate == null || endDate == null)
+            {
+                invoices = await _context.CommercialInvoices
+     .OrderByDescending(x => x.CreatedAt) // or InvoiceDate / Id
+     .Take(1)
+     .AsNoTracking()
+     .ToListAsync();
+
+            }
+            else 
+            {
+                invoices = await _context.CommercialInvoices.FromSqlRaw("CALL GetAllInvoices({0}, {1})", startDate, endDate)
+               .AsNoTracking()
+               .ToListAsync();
+            }
+          
+
 
             return invoices;
        
